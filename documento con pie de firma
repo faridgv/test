@@ -1,0 +1,119 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package oper_pdf;
+
+import com.itextpdf.text.Document;
+import com.itextpdf.text.DocumentException;
+import com.itextpdf.text.PageSize;
+import com.itextpdf.text.Rectangle;
+import com.itextpdf.text.pdf.ColumnText;
+import com.itextpdf.text.pdf.PdfAnnotation;
+import com.itextpdf.text.pdf.PdfContentByte;
+import com.itextpdf.text.pdf.PdfCopy;
+import com.itextpdf.text.pdf.PdfFormField;
+import com.itextpdf.text.pdf.PdfImportedPage;
+import com.itextpdf.text.pdf.PdfPCell;
+import com.itextpdf.text.pdf.PdfPCellEvent;
+import com.itextpdf.text.pdf.PdfPTable;
+import com.itextpdf.text.pdf.PdfReader;
+import com.itextpdf.text.pdf.PdfStamper;
+import com.itextpdf.text.pdf.PdfWriter;
+import java.io.ByteArrayOutputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+
+/**
+ *
+ * @author Administrador
+ */
+public class tablas {
+
+
+    public static void main(String[] args) throws FileNotFoundException, DocumentException, IOException{
+     
+        
+      for(int a=0;a<100;a++)
+      {
+    PdfReader reader= new PdfReader("c:/lolo1.pdf");     
+    ByteArrayOutputStream baos= pdfPieFirma(reader.getPageSize(1));
+    Document docu= new Document();
+    PdfCopy copy= new PdfCopy(docu,new FileOutputStream("c:/gg.pdf"));
+    docu.open();    
+     
+    for(int i=1;i<reader.getNumberOfPages()+1;i++)
+    copy.addPage(copy.getImportedPage(reader, i));
+   copy.addPage(copy.getImportedPage(new PdfReader(baos.toByteArray()), 1));    
+    reader.close();
+    docu.close();
+      }
+    }
+
+    public static ByteArrayOutputStream pdfPieFirma(Rectangle dimens) throws FileNotFoundException, DocumentException, IOException{
+    Document docu= new Document(dimens);
+   
+    String [] usuarios={"Farid Garcia","Sigemp","juan"};
+    String [] oper={"Elaborado: ","Revision: ","Aprobacion:"};
+     ByteArrayOutputStream baos = new ByteArrayOutputStream();
+   
+     PdfWriter writer = PdfWriter.getInstance(docu,baos);
+     docu.open();
+     docu.newPage();
+     PdfPTable table= new PdfPTable(1);
+     table.setWidthPercentage(100);
+    for(int i=0;i<usuarios.length;i++)
+    {
+     table.addCell(oper[i]+usuarios[i] );
+     table.addCell(otros(writer,"aprob"+i));
+     table.addCell(createSignatureFieldCell(writer,"Firma"+i));
+     }
+    docu.add(table);
+    docu.close();
+    writer.close(); 
+    return baos;
+    }
+
+
+    protected static PdfPCell createSignatureFieldCell(PdfWriter writer, String name) {
+PdfPCell cell = new PdfPCell();
+cell.setMinimumHeight(50);
+PdfFormField field = PdfFormField.createSignature(writer);
+field.setFieldName(name);
+
+cell.setCellEvent(new MySignatureFieldEvent(field));
+return cell;
+}
+
+protected static PdfPCell otros (PdfWriter writer, String name) {
+PdfPCell cell = new PdfPCell();
+cell.setMinimumHeight(14);
+PdfFormField field = PdfFormField.createTextField(writer, false, false, 40);
+field.setFieldName(name);
+
+cell.setCellEvent(new MySignatureFieldEvent(field));
+return cell;
+}
+
+
+    public static class MySignatureFieldEvent implements PdfPCellEvent {
+public PdfFormField field;
+public MySignatureFieldEvent(PdfFormField field) {
+this.field = field;
+}
+
+  public void cellLayout(PdfPCell cell, Rectangle position,
+PdfContentByte[] canvases) {
+PdfWriter writer = canvases[0].getPdfWriter();
+field.setPage();
+field.setWidget(position, PdfAnnotation.HIGHLIGHT_INVERT);
+writer.addAnnotation(field);
+}
+}
+
+
+}
+
